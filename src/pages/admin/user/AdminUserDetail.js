@@ -26,8 +26,25 @@ const AdminUserDetail = () => {
     const [pageData, setPageData] = useState([]);
     const [filters, setFilters] = useState([]);
     const [initialValues, setInitialValues] = useState([]);
+    const [phoneNumber, setPhone] = useState("");
+    const [password, setPassword] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [phoneError, setPhoneError] = useState("");
 
     const fetchUser = useCallback(async () => {
+
+        if (password.length < 8) {
+            setPasswordError("Mật khẩu phải có ít nhất 8 ký tự.");
+            return;
+          } else {
+            setPasswordError("");
+          }
+          if (!/^(0\d{9})$/.test(phoneNumber)) {
+            setPhoneError("Số điện thoại không hợp lệ.");
+            return;
+          } else {
+            setPhoneError("");
+          }
         // Fetch user được chọn
         try {
             const res = await axios.get(`${API_URL}/${email}`);

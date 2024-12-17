@@ -8,7 +8,7 @@ export const verifyOTP = async (otpCode, q) => {
       `${API_URL}/auth/verify-otp?q=${encodeURIComponent(q)}`,
       {
         otp: otpCode,
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -34,14 +34,22 @@ export const login = async (email, password) => {
       email,
       password,
     });
-    const accessToken = response.data.accessToken;
-    // Giải mã accessToken để lấy thông tin người dùng
-    const decodedToken = jwtDecode(accessToken).role;
-    const userEmail = jwtDecode(accessToken).email;
-    const userId = jwtDecode(accessToken).userid
-    return { accessToken, userEmail, decodedToken,userId };
+
+    if (response.data.verifyUrl) {
+      const verifyUrl = response.data.verifyUrl || null;
+      const accessToken = response.data.token;
+      const decodedToken = jwtDecode(accessToken).role;
+      return { accessToken, decodedToken, verifyUrl };
+    } else {
+      const accessToken = response.data.accessToken;
+      const decodedToken = jwtDecode(accessToken).role;
+      const userEmail = jwtDecode(accessToken).email;
+      const userId = jwtDecode(accessToken).userid;
+      return { accessToken, userEmail, decodedToken, userId };
+    }
   } catch (error) {
-    const errorMessage = error.response?.data || 'Có lỗi xảy ra, vui lòng thử lại!';
+    const errorMessage =
+      error.response?.data || "Có lỗi xảy ra, vui lòng thử lại!";
     console.error("Error:", errorMessage);
     throw new Error(errorMessage.error);
   }
@@ -55,8 +63,6 @@ export const requestOTP = async (email) => {
     throw new Error(error.response?.data?.message || "Yêu cầu OTP thất bại");
   }
 };
-
-
 
 export const sendOTP = async (email) => {
   try {
@@ -72,7 +78,7 @@ export const sendOTP = async (email) => {
 
 export const forgotPassword = async (
   { otp, newPassword, confirmPassword },
-  q
+  q,
 ) => {
   console.log(otp, newPassword, confirmPassword, q);
 
@@ -84,13 +90,61 @@ export const forgotPassword = async (
         otp,
         newPassword,
         confirmPassword,
-      }
+      },
     );
 
     return response.data; // Return the success message
   } catch (error) {
     throw new Error(
-      error.response?.data?.message || "Đặt lại mật khẩu thất bại"
+      error.response?.data?.message || "Đặt lại mật khẩu thất bại",
     );
+  }
+};
+
+// export const loginGoogle = async () => {
+//   console.log(123);
+
+//   try {
+//     console.log(456);
+
+//     const response = await axios.get(`${API_URL}/auth/google`);
+//     console.log("response", response);
+
+//     console.log(789);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error details:", error); // Thêm dòng này để ghi lại thông tin lỗi
+//     throw new Error(error.response?.data?.message || "Đăng nhập thất bại");
+//   }
+// };
+export const loginGoogle = async () => {
+  console.log(123);
+
+  try {
+    console.log(456);
+
+    const response = await axios.get(`${API_URL}/auth/google`, {
+      withCredentials: true,
+      maxRedirects: 0, // Chặn tự động điều hướng để kiểm soát
+    });
+
+    if (response.status === 302) {
+      const authUrl = response.headers.location;
+      window.location.href = authUrl; // Điều hướng thủ công
+    } else {
+      console.log("response", response);
+      return response.data;
+    }
+
+    console.log(789);
+  } catch (error) {
+    if (error.response && error.response.status === 302) {
+      const authUrl = error.response.headers.location;
+      window.location.href = authUrl; // Điều hướng thủ công
+    } else {
+      console.error("Error details:", error);
+      throw new Error(error.response?.data?.message || "Đăng nhập thất bại");
+    }
   }
 };

@@ -56,6 +56,13 @@ const AddressesUser = () => {
   };
 
   const handleOk = async () => {
+    if (!addressLine || !district || !city || !country) {
+      notification.error({
+        message: "Thêm địa chỉ thất bại",
+        description: "Tất cả các trường đều phải được điền.",
+      });
+      return;
+    }
     try {
       await addAddresses(email, {
         addressLine,
@@ -88,10 +95,39 @@ const AddressesUser = () => {
     showModal("edit");
   };
 
+  // const handleEditAddress = async () => {
+  //   if (!addressLine || !district || !city || !country) {
+  //       notification.error({
+  //           message: "Sửa địa chỉ thất bại",
+  //           description: "Tất cả các trường đều phải được điền.",
+  //       });
+  //       return;
+  //   }
+  //   const addressId = localStorage.getItem("addressId");
+  //   try {
+  //       await editAddresses(addressId, {
+  //           addressLine,
+  //           district,
+  //           city,
+  //           country,
+  //       });
+  //       fetchAddresses();
+  //       setIsModalVisible(false);
+  //   } catch (error) {
+  //       console.error("Error editing address:", error);
+  //   }
+  // };
+
   const handleEditAddress = async () => {
+    if (!addressLine || !district || !city || !country) {
+      notification.error({
+        message: "Sửa địa chỉ thất bại",
+        description: "Tất cả các trường đều phải được điền.",
+      });
+      throw new Error("All fields are required");
+    }
     const addressId = localStorage.getItem("addressId");
     try {
-      console.log("addressId", addressId);
       await editAddresses(addressId, {
         addressLine,
         district,
@@ -102,6 +138,7 @@ const AddressesUser = () => {
       setIsModalVisible(false);
     } catch (error) {
       console.error("Error editing address:", error);
+      throw error;
     }
   };
 
@@ -155,7 +192,10 @@ const AddressesUser = () => {
 
   const indexOfLastAddress = currentPage * addressesPerPage;
   const indexOfFirstAddress = indexOfLastAddress - addressesPerPage;
-  const currentAddresses = addressesArray.slice(indexOfFirstAddress, indexOfLastAddress);
+  const currentAddresses = addressesArray.slice(
+    indexOfFirstAddress,
+    indexOfLastAddress,
+  );
 
   return (
     <div className={styles.profile}>
@@ -180,7 +220,9 @@ const AddressesUser = () => {
                 <th>Quận/Huyện</th>
                 <th>Thành phố</th>
                 <th>Quốc gia</th>
-                <th style={{ textAlign: "center", width: "250px" }}>Hành động</th>
+                <th style={{ textAlign: "center", width: "250px" }}>
+                  Hành động
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -250,21 +292,28 @@ const AddressesUser = () => {
           <Form layout="vertical">
             <Form.Item label="Địa chỉ" required>
               <Input
+                required
                 value={addressLine}
                 onChange={(e) => setAddressLine(e.target.value)}
               />
             </Form.Item>
             <Form.Item label="Quận huyện" required>
               <Input
+                required
                 value={district}
                 onChange={(e) => setDistrict(e.target.value)}
               />
             </Form.Item>
             <Form.Item label="Thành phố" required>
-              <Input value={city} onChange={(e) => setCity(e.target.value)} />
+              <Input
+                required
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
             </Form.Item>
             <Form.Item label="Quốc gia" required>
               <Input
+                required
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
               />
@@ -273,26 +322,11 @@ const AddressesUser = () => {
         </Modal>
       )}
 
-      {modalType === "edit" && (
+      {/* {modalType === "edit" && (
         <Modal
           title={"SỬA ĐỊA CHỈ"}
           visible={isModalVisible}
-          onOk={() => {
-            handleEditAddress()
-              .then(() => {
-                notification.success({
-                  message: "Sửa địa chỉ thành công",
-                  description: "Địa chỉ của bạn đã được cập nhật.",
-                });
-              })
-              .catch(() => {
-                notification.error({
-                  message: "Sửa địa chỉ thất bại",
-                  description:
-                    "Có lỗi xảy ra khi cập nhật địa chỉ. Vui lòng thử lại.",
-                });
-              });
-          }}
+          onOk={handleEditAddress}
           onCancel={handleCancel}
           footer={[
             <Button key="back" onClick={handleCancel}>
@@ -317,6 +351,59 @@ const AddressesUser = () => {
                         "Có lỗi xảy ra khi cập nhật địa chỉ. Vui lòng thử lại.",
                     });
                   });
+              }}
+            >
+              Sửa địa chỉ
+            </Button>,
+          ]}
+        >
+          <Form layout="vertical">
+            <Form.Item label="Địa chỉ" required>
+              <Input
+                value={addressLine}
+                onChange={(e) => setAddressLine(e.target.value)}
+              />
+            </Form.Item>
+            <Form.Item label="Quận huyện" required>
+              <Input
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+              />
+            </Form.Item>
+            <Form.Item label="Thành phố" required>
+              <Input value={city} onChange={(e) => setCity(e.target.value)} />
+            </Form.Item>
+            <Form.Item label="Quốc gia" required>
+              <Input
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
+      )} */}
+
+      {modalType === "edit" && (
+        <Modal
+          title={"SỬA ĐỊA CHỈ"}
+          visible={isModalVisible}
+          onCancel={handleCancel}
+          footer={[
+            <Button key="back" onClick={handleCancel}>
+              Hủy
+            </Button>,
+            <Button
+              className={styles.button}
+              key="submit"
+              type="primary"
+              onClick={async () => {
+                try {
+                  await handleEditAddress();
+                  notification.success({
+                    message: "Sửa địa chỉ thành công",
+                    description: "Địa chỉ của bạn đã được cập nhật.",
+                  });
+                } catch (error) {}
               }}
             >
               Sửa địa chỉ

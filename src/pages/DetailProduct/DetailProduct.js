@@ -184,7 +184,7 @@ export const DetailProduct = () => {
             <DescProduct product={product.data?.product} />
           </div>
         </div>
-        <div className={styles.right}>
+        {/* <div className={styles.right}>
           <div className={styles.couponBox}>
             <div className={styles.couponTitle}>
               <img
@@ -213,7 +213,7 @@ export const DetailProduct = () => {
               <button className={styles.copyBtn}>Copy</button>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </>
   );

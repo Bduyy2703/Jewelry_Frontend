@@ -4,8 +4,8 @@ import styles from "./Checkout.module.scss";
 import { PaymentVNPAY } from "../../services/api/checkoutService";
 
 const Checkout = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { cartItems, emailtoken, paymentData } = location.state || {};
   const paymentDataArray = Object.values(paymentData);
   const [shippingInfo, setShippingInfo] = useState({
@@ -49,38 +49,11 @@ const Checkout = () => {
     localStorage.clear();
     navigate("/");
   };
-
-  // const [discount_id, setDiscount_id] = useState(null);
+  
   const [paymentMethod, setPaymentMethod] = useState("VNPAY");
   const [addressId, setAddressId] = useState(addresses[0]?._id || null);
 
   const discount_id = localStorage.getItem("discount_id");
-
-  // const handlePayment = async () => {
-  //   try {
-  //     const email = localStorage.getItem("userEmail");
-  //     const items = cartItems.map((item) => ({
-  //       product_id: item?.id,
-  //       quantity: item.quantity,
-  //     }));
-  //     console.log('discount_id', discount_id);
-  //     const response = await PaymentVNPAY({
-  //       email,
-  //       addressId,
-  //       paymentMethod,
-  //       items,
-  //       discount_id,
-  //       totalAmount: data?.totalAmountAfterDiscount,
-  //     });
-
-  //     console.log('paymentMethod', paymentMethod);
-
-  //     window.location.href = response.data.vnpayResponse;
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
   const handlePayment = async () => {
     try {
       const email = localStorage.getItem("userEmail");
@@ -88,17 +61,25 @@ const Checkout = () => {
         product_id: item?.id,
         quantity: item.quantity,
       }));
-      console.log("discount_id", discount_id);
-      const response = await PaymentVNPAY({
+      let response;
+      const payload = {
         email,
         addressId,
         paymentMethod,
         items,
-        discount_id,
         totalAmount: data?.totalAmountAfterDiscount,
-      });
+      };
 
-      // Chuyển hướng dựa trên phương thức thanh toán
+      if (
+        discount_id !== null &&
+        discount_id !== undefined &&
+        discount_id !== "null"
+      ) {
+        payload.discount_id = discount_id;
+      }
+
+      response = await PaymentVNPAY(payload);
+
       if (paymentMethod === "VNPAY") {
         window.location.href = response.data.vnpayResponse;
       } else if (paymentMethod === "COD") {
@@ -108,7 +89,6 @@ const Checkout = () => {
       console.error(error);
     }
   };
-
   return (
     <div className={styles.checkoutContainer}>
       <div className={styles.logo}>
@@ -185,66 +165,9 @@ const Checkout = () => {
           </div>
 
           <div className={styles.rightSection}>
-            {/* <div className={styles.shippingSection}>
-              <h3>Vận chuyển</h3>
-              <div className={styles.shippingOption}>
-                <input type="radio" checked readOnly />
-                <span>Miễn phí giao hàng với đơn hàng từ 950.000 VND</span>
-                <span className={styles.shippingPrice}>Miễn phí</span>
-              </div>
-            </div> */}
-
             <div className={styles.paymentSection}>
               <h3>Thanh toán</h3>
               <div className={styles.paymentOptions}>
-                {/* <div className={styles.paymentOption}>
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="fundiin"
-                    checked={paymentMethod === "fundiin"}
-                    onChange={(e) => {
-                      setPaymentMethod(e.target.value);
-                      setShowFundiinDetails(true);
-                    }}
-                  />
-                  <span>Thanh toán trả góp qua Fundiin</span>
-                  <img
-                    style={{
-                      width: "52px",
-                      height: "28px",
-                      objectFit: "contain",
-                    }}
-                    src="https://fundiin.vn/cms/static/assets/img/Fundiin-blue.png"
-                    alt="Fundiin"
-                  />
-                </div>
-
-                {showFundiinDetails && paymentMethod === "fundiin" && (
-                  <div className={styles.fundiinDetails}>
-                    <p>
-                      Dễ dàng sử dụng chỉ sau 5 giây xác thực tài khoản - Trả
-                      sau hoàn toàn MIỄN LÃI với nhiều kỳ hạn:
-                    </p>
-                    <ul>
-                      <li>Trả sau 12 tháng cho đơn hàng lên đến 100 triệu</li>
-                      <li>Trả sau 9 tháng cho đơn hàng lên đến 100 triệu</li>
-                      <li>Trả sau 6 tháng cho đơn hàng lên đến 100 triệu</li>
-                    </ul>
-                    <p>Ưu đãi:</p>
-                    <ul>
-                      <li>Dành cho khách hàng mới: Giảm 15% tối đa 30K.</li>
-                      <li>
-                        Dành cho khách hàng đã từng thanh toán Fundiin: Giảm 10%
-                        tối đa 15K.
-                      </li>
-                    </ul>
-                    <p className={styles.note}>
-                      (*) Mã được nhập tại giao diện thanh toán của Fundiin
-                    </p>
-                  </div>
-                )} */}
-
                 <div className={styles.paymentOption}>
                   <input
                     type="radio"
@@ -274,50 +197,6 @@ const Checkout = () => {
                     <p>Thanh toán VNPAY</p>
                   </div>
                 )}
-
-                {/* <div className={styles.paymentOption}>
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="bank"
-                    checked={paymentMethod === "bank"}
-                    onChange={(e) => {
-                      setPaymentMethod(e.target.value);
-                      setShowBankDetails(true);
-                      setShowVNPayDetails(false);
-                      setShowFundiinDetails(false);
-                    }}
-                  />
-                  <span>Chuyển khoản qua ngân hàng</span>
-                  <img
-                    style={{
-                      width: "52px",
-                      height: "28px",
-                      objectFit: "contain",
-                    }}
-                    src="https://cdn-icons-png.freepik.com/512/8992/8992633.png"
-                    alt="Bank"
-                  />
-                </div>
-
-                {showBankDetails && paymentMethod === "bank" && (
-                  <div className={styles.bankDetails}>
-                    <p>Quý khách có thể thanh toán chuyển khoản từ tài khoản cá nhân của mình đến tài khoản của Cara Luna:</p>
-                    
-                    <div className={styles.bankInfo}>
-                      <p>- NGÂN HÀNG: Ngân hàng Thương Mại Cổ Phần Quân Đội - MB Bank</p>
-                      <p>- CHỦ TÀI KHOẢN: BUI THI THANH TAM</p>
-                      <p>- SỐ TÀI KHOẢN: 8888803051986</p>
-                      <p>- NỘI DUNG CK: {"<Tên người chuyển> <Số điện thoại>"}</p>
-                      <p className={styles.example}>(Ví dụ: Tuấn Anh 096.456.999)</p>
-                    </div>
-
-                    <p className={styles.note}>
-                      Sau khi bạn chuyển khoản xong, hoàn tất quá trình đặt đơn hàng, Cara Luna sẽ tiếp nhận đơn hàng và liên hệ lại với bạn qua số điện thoại bạn cung cấp!
-                    </p>
-                  </div>
-                )} */}
-
                 <div className={styles.paymentOption}>
                   <input
                     type="radio"
@@ -378,10 +257,10 @@ const Checkout = () => {
             </div>
           ))}
 
-          <div className={styles.couponSection}>
+          {/* <div className={styles.couponSection}>
             <input type="text" placeholder="Nhập mã giảm giá" />
             <button>Áp dụng</button>
-          </div>
+          </div> */}
 
           <div className={styles.orderTotal}>
             <div className={styles.subtotal}>

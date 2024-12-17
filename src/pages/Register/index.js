@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { register } from "../../services/api/authService"; // Import hàm đăng ký từ service
-import styles from "./register.module.scss"; // Import SCSS module
+import { register } from "../../services/api/authService";
+import styles from "./register.module.scss";
 import Breadcrumb from "../../components/Breadcrumb";
 import { notification } from "antd";
 
@@ -12,51 +12,40 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const breadcrumbItems = [
     { label: "Trang chủ", path: "/" },
     { label: "Đăng ký" },
   ];
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   const data = { firstName, lastName, email, phoneNumber, password }; // Dữ liệu đăng ký
-  //   console.log(data);
-  //   try {
-  //     const response = await register(data); // Gọi API đăng ký
-  //     console.log("Đăng ký thành công:", response);
-  //     const urlParams = new URLSearchParams(
-  //       response.user.verifyUrl.split("?")[1],
-  //     );
-  //     const q = urlParams.get("q"); // Lấy giá trị của q
-  //     navigate("/otp", { state: { q } }); // Truyền q vào state để sử dụng trong trang OTP
-  //   } catch (error) {
-  //     alert(error.message); // Hiển thị thông báo lỗi
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Kiểm tra độ dài mật khẩu
     if (password.length < 8) {
-      notification.error({
-        message: "Thông báo",
-        description: "Mật khẩu phải có ít nhất 8 ký tự.",
-      });
-      return; // Dừng thực hiện nếu mật khẩu không hợp lệ
+      setPasswordError("Mật khẩu phải có ít nhất 8 ký tự.");
+      return;
+    } else {
+      setPasswordError("");
     }
-    const data = { firstName, lastName, email, phoneNumber, password }; // Dữ liệu đăng ký
+    if (!/^(0\d{9})$/.test(phoneNumber)) {
+      setPhoneError("Số điện thoại không hợp lệ.");
+      return;
+    } else {
+      setPhoneError("");
+    }
+    const data = { firstName, lastName, email, phoneNumber, password };
     console.log(data);
     try {
-      const response = await register(data); // Gọi API đăng ký
+      const response = await register(data); 
       console.log("Đăng ký thành công:", response);
       const urlParams = new URLSearchParams(
         response.user.verifyUrl.split("?")[1],
       );
-      const q = urlParams.get("q"); // Lấy giá trị của q
-      navigate("/otp", { state: { q } }); // Truyền q vào state để sử dụng trong trang OTP
+      const q = urlParams.get("q"); 
+      navigate("/otp", { state: { q } });
     } catch (error) {
-      alert(error.message); // Hiển thị thông báo lỗi
+      alert(error.message);
     }
   };
 
@@ -97,6 +86,7 @@ export default function Register() {
             value={phoneNumber}
             onChange={(e) => setPhone(e.target.value)}
           />
+          {phoneError && <p style={{ marginBottom: '7px', color: 'red' }}>{phoneError}</p>}
           <input
             type="password"
             placeholder="Mật khẩu"
@@ -104,6 +94,7 @@ export default function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          {passwordError && <p style={{ color: 'red' }}>{passwordError}</p>}
           <button type="submit" className={styles["register-button"]}>
             ĐĂNG KÝ
           </button>

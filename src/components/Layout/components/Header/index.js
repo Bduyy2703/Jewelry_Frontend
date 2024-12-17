@@ -124,7 +124,6 @@ function Header() {
     setKeyword(value);
   };
 
-  // Thêm hàm xử lý submit tìm kiếm
   const handleSearch = () => {
     if (keyword.trim()) {
       navigate(`/list-product?keyword=${encodeURIComponent(keyword.trim())}`);

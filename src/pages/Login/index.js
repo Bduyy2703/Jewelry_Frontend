@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login, requestOTP, sendOTP } from "../../services/api/authService"; // Import các hàm từ service
+import {
+  getGoogleAuthUrl,
+  login,
+  loginGoogle,
+  sendOTP,
+} from "../../services/api/authService"; // Import các hàm từ service
 import styles from "./Login.module.scss"; // Import SCSS
-import Breadcrumb from '../../components/Breadcrumb';
+import Breadcrumb from "../../components/Breadcrumb";
 import { notification } from "antd";
 
 export default function Login() {
@@ -11,49 +16,108 @@ export default function Login() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState(""); // Email cho quên mật khẩu
   const navigate = useNavigate();
+  const [passwordError, setPasswordError] = useState("");
 
   const breadcrumbItems = [
-    { label: 'Trang chủ', path: '/' },
-    { label: 'Đăng nhập' }
+    { label: "Trang chủ", path: "/" },
+    { label: "Đăng nhập" },
   ];
 
-  // Xử lý đăng nhập
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (password.length < 8) {
+      setPasswordError("Mật khẩu phải có ít nhất 8 ký tự.");
+      return;
+    } else {
+      setPasswordError("");
+    }
     try {
-      const { userEmail, accessToken, decodedToken ,userId} = await login(email, password); 
-      console.log("Đăng nhập thành công:", accessToken);
-      notification.success({
-        message: "Đăng nhập thành công",
-        description: "Bạn đã đăng nhập thành công",
-      });
-      setEmail(userEmail);
-      // localStorage.setItem("userEmail", userEmail);
-      // localStorage.setItem("accessToken",accessToken);
-      if (decodedToken === "user") {
+      const { userEmail, accessToken, decodedToken, userId, verifyUrl } =
+        await login(email, password);
+
+      if (verifyUrl) {
+        const urlParams = new URLSearchParams(verifyUrl.split("?")[1]);
+        const q = urlParams.get("q");
+        notification.warning({
+          message: "Tài khoản của bạn chưa được xác thực",
+          description: "OTP đã được gửi, vui lòng kiểm tra email",
+        });
+        navigate("/otp", { state: { q } });
+        return;
+      }
+
+      if (accessToken) {
+        console.log("Đăng nhập thành công:", accessToken);
+        notification.success({
+          message: "Đăng nhập thành công",
+          description: "Bạn đã đăng nhập thành công",
+        });
+        setEmail(userEmail);
         localStorage.setItem("userEmail", userEmail);
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("decodedToken", decodedToken);
         localStorage.setItem("userId", userId);
-        navigate("/account", { state: { email: userEmail } });
-      } else if (decodedToken === "admin") {
-        localStorage.setItem("decodedToken", decodedToken);
-        navigate("/admin");
+
+        if (decodedToken === "user") {
+          navigate("/account", { state: { email: userEmail } });
+        } else if (decodedToken === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/login");
+        }
       } else {
-        navigate("/login"); 
+        notification.error({
+          message: "Đăng nhập thất bại",
+          description: "Thông tin đăng nhập không đúng",
+        });
       }
     } catch (error) {
+      console.error("Lỗi đăng nhập:", error);
+      if (error.response && error.response.data) {
+        notification.error({
+          message: "Đăng nhập thất bại",
+          description:
+            error.response.data.message || "Bạn đã nhập sai mật khẩu",
+        });
+      } else {
+        notification.error({
+          message: "Đăng nhập thất bại",
+          description: "Có lỗi xảy ra, vui lòng thử lại.",
+        });
+      }
+    }
+  };
+
+  // const loginGg = async () => {
+  //   try {
+  //     const authUrl = await getGoogleAuthUrl();
+  //     if (authUrl) {
+  //       window.location.href = authUrl;
+  //     }
+  //   } catch (error) {
+  //     notification.error({
+  //       message: "Yêu cầu xác thực thất bại",
+  //       description: error.message,
+  //     });
+  //   }
+  // };
+
+  const loginGg = async () => {
+    try {
+      const authUrl = await loginGoogle();
+      console.log("Chuyển hướng tới Google để xác thực", authUrl);
+      window.location.href = authUrl;
+    } catch (error) {
       notification.error({
-        message: "Đăng nhập thất bại",
-        description: "Bạn đã nhập sai mật khẩu",
+        message: "Yêu cầu xác thực thất bại",
+        description: error.message,
       });
     }
   };
 
-  // Xử lý yêu cầu OTP quên mật khẩu
   const handleResetPassword = async () => {
     try {
-      const otpData = await sendOTP(forgotEmail); // Gọi API yêu cầu OTP
+      const otpData = await sendOTP(forgotEmail);
       console.log("Yêu cầu OTP thành công:", otpData);
       navigate("/reset-password");
     } catch (error) {
@@ -85,6 +149,11 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {passwordError && (
+              <p style={{ marginTop: "-10px", color: "red" }}>
+                {passwordError}
+              </p>
+            )}
             <button type="submit" className={styles.loginButton}>
               ĐĂNG NHẬP
             </button>
@@ -121,10 +190,7 @@ export default function Login() {
           <div className={styles.socialLogin}>
             <p>hoặc đăng nhập qua</p>
             <div className={styles.socialButtons}>
-              <button className={styles.facebookButton}>
-                <i className="fab fa-facebook-f"></i> Facebook
-              </button>
-              <button className={styles.googleButton}>
+              <button onClick={() => loginGg()} className={styles.googleButton}>
                 <i className="fab fa-google"></i> Google
               </button>
             </div>

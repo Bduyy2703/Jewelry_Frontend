@@ -5,6 +5,7 @@ import styles from './VerifyOTP.module.scss';
 import { Form } from 'antd';
 import InputOtpField from '../../components/form/InputOtpField';
 import OTP from '../../assets/icon/OTP.png'
+import { notification } from 'antd';
 
 export default function VerifyOTP() {
   const location = useLocation();
@@ -14,11 +15,13 @@ export default function VerifyOTP() {
 
   const handleSubmit = async (values) => {
     const otpCode = values.otp;
-    
     try {
       const response = await verifyOTP(otpCode, q);
       console.log('Xác minh thành công:', response);
-      alert(`Xác minh mã OTP thành công!`);
+      notification.success({
+        message: 'Xác minh thành công',
+        description: 'Xác minh mã OTP thành công!',
+      });
       navigate('/login');
     } catch (error) {
       alert(error);

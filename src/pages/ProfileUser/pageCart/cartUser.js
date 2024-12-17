@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, Checkbox, Button, Pagination } from "antd";
+import { Form, Input, Checkbox, Button, Pagination, Tooltip } from "antd";
 import { login, getUserProfile } from "../../../services/api/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
@@ -9,7 +9,13 @@ import { commonMessage } from "../../../components/locales/intl";
 import { defineMessages } from "react-intl";
 import styles from "./CartUser.module.scss";
 import { getAllInvoices } from "../../../services/api/userService";
-import { CheckCircleOutlined, IssuesCloseOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  IssuesCloseOutlined,
+  PayCircleOutlined,
+} from "@ant-design/icons";
+import { retryPayment } from "../../../services/api/checkoutService";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const messages = defineMessages({
   jewelryTitle: {
@@ -21,6 +27,9 @@ const messages = defineMessages({
 const CartUser = () => {
   const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  // const location = useLocation();
+  // const { cartItems, emailtoken, paymentData } = location.state || {};
+  // const paymentDataArray = Object.values(paymentData);
   const ordersPerPage = 8;
 
   const handlePageChange = (page) => {
@@ -30,6 +39,8 @@ const CartUser = () => {
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+
+  const navigate = useNavigate();
 
   const getAll = async () => {
     try {
@@ -48,6 +59,26 @@ const CartUser = () => {
   const handleInvoiceDetail = (invoiceId) => {
     localStorage.setItem("invoiceId", invoiceId);
     window.location.href = "/account/orders/invoice-detail";
+  };
+
+  const handlePayment = async (invoiceId) => {
+    try {
+      const result = await retryPayment({ invoiceId });
+      console.log('result', result);
+      
+      if (result.error) {
+        console.error("Lỗi khi thanh toán lại:", result.error);
+      } else {
+        console.log("Thanh toán lại thành công:", result);
+        if (result?.data?.paymentUrl) {
+          window.location.href = result?.data?.paymentUrl; 
+        } else {
+          console.error("Không tìm thấy paymentUrl trong phản hồi.");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi hàm thanh toán lại:", error);
+    }
   };
 
   return (
@@ -194,6 +225,14 @@ const CartUser = () => {
                         <CheckCircleOutlined
                           style={{ marginLeft: "23px", color: "green" }}
                         />
+                        <PayCircleOutlined
+                          style={{
+                            marginLeft: "30px",
+                            color: "gray",
+                            cursor: "not-allowed",
+                          }}
+                          title="Đã thanh toán"
+                        />
                       </span>
                     ) : order.status === "pending" ? (
                       <span
@@ -207,6 +246,16 @@ const CartUser = () => {
                         <IssuesCloseOutlined
                           style={{ marginLeft: "50px", color: "red" }}
                         />
+                        <Tooltip title="Thanh toán lại">
+                          <PayCircleOutlined
+                            style={{
+                              marginLeft: "30px",
+                              color: "blue",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => handlePayment(order._id)}
+                          />
+                        </Tooltip>
                       </span>
                     ) : (
                       <span>Trạng thái không xác định</span>

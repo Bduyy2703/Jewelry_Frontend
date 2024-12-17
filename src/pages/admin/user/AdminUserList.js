@@ -57,6 +57,14 @@ const AdminUserList = () => {
             schema[field] = Yup.string().required(
                 `${initialValues[field].label} là bắt buộc`
             );
+            if (field === 'phoneNumber') {
+                schema[field] = schema[field]
+                    .matches(/^0\d{9}$/, "Số điện thoại phải bắt đầu bằng 0 và có 10 chữ số");
+            }
+            if (field === 'password') {
+                schema[field] = schema[field]
+                    .min(8, "Mật khẩu phải có ít nhất 8 ký tự");
+            }
             return schema;
         }, {})
     );

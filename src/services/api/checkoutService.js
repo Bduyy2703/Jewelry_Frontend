@@ -43,3 +43,25 @@ export const PaymentVNPAY = async ({
     return { error: error.message };
   }
 };
+
+export const retryPayment = async ({ invoiceId }) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/invoices/retryPayment`,
+      null,
+      {
+        params: {
+          invoiceId: invoiceId,
+        },
+      },
+    );
+
+    return {
+      data: response.data,
+      paymentUrl: response.data.paymenturl,
+    };
+  } catch (error) {
+    console.error(error);
+    return { error: error.message };
+  }
+};
